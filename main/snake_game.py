@@ -9,7 +9,7 @@ import pygame
 from pygame import mixer
 
 class SnakeGame:
-    def __init__(self, seed=0, board_size=12, silent_mode=True):
+    def __init__(self, seed=114514, board_size=12, silent_mode=True, fix_seed=True):
         self.board_size = board_size
         self.grid_size = self.board_size ** 2
         self.cell_size = 40
@@ -20,6 +20,7 @@ class SnakeGame:
         self.display_height = self.height + 2 * self.border_size + 40
 
         self.silent_mode = silent_mode
+        self.fix_seed = fix_seed
         if not silent_mode:
             pygame.init()
             pygame.display.set_caption("Snake Game")
@@ -28,9 +29,9 @@ class SnakeGame:
 
             # Load sound effects
             mixer.init()
-            self.sound_eat = mixer.Sound("sound/eat.wav")
-            self.sound_game_over = mixer.Sound("sound/game_over.wav")
-            self.sound_victory = mixer.Sound("sound/victory.wav")
+            self.sound_eat = mixer.Sound("main/sound/eat.wav")
+            self.sound_game_over = mixer.Sound("main/sound/game_over.wav")
+            self.sound_victory = mixer.Sound("main/sound/victory.wav")
         else:
             self.screen = None
             self.font = None
@@ -48,6 +49,8 @@ class SnakeGame:
         self.reset()
 
     def reset(self):
+        if self.fix_seed:
+            random.seed(self.seed_value)
         self.snake = [(self.board_size // 2 + i, self.board_size // 2) for i in range(1, -2, -1)] # Initialize the snake with three cells in (row, column) format.
         self.non_snake = set([(row, col) for row in range(self.board_size) for col in range(self.board_size) if (row, col) not in self.snake]) # Initialize the non-snake cells.
         self.direction = "DOWN" # Snake starts downward in each round
