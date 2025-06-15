@@ -93,7 +93,9 @@ class PPOAgent:
         self.lam = lam
         self.clip_eps = clip_eps
         self.k_epochs = k_epochs
-        self.memory: Deque[Tuple[np.ndarray, int, float, float, bool, np.ndarray]] = deque()
+        self.memory: Deque[Tuple[np.ndarray, int, float, float, bool, np.ndarray]] = (
+            deque()
+        )
 
     def select_action(self, state: np.ndarray) -> Tuple[int, float]:
         state_t = _to_tensor(state)
@@ -115,7 +117,11 @@ class PPOAgent:
         self.memory.append((state, action, reward, log_prob, done, next_state))
 
     def _compute_gae(
-        self, rewards: torch.Tensor, values: torch.Tensor, dones: torch.Tensor, next_value: torch.Tensor
+        self,
+        rewards: torch.Tensor,
+        values: torch.Tensor,
+        dones: torch.Tensor,
+        next_value: torch.Tensor,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         advantages = torch.zeros_like(rewards)
         gae = 0.0
@@ -139,13 +145,17 @@ class PPOAgent:
         old_log_probs_t = torch.tensor(old_log_probs)
         rewards_t = torch.tensor(rewards)
         dones_t = torch.tensor(dones, dtype=torch.float32)
-        values = self.value(states_t)
-        next_value = self.value(next_states_t[-1:])
+        values = self.value(states_t).detach()
+        next_value = self.value(next_states_t[-1:]).detach()
         adv, returns = self._compute_gae(rewards_t, values, dones_t, next_value.item())
         adv = (adv - adv.mean()) / (adv.std() + 1e-8)
+        adv = adv.detach()
+        returns = returns.detach()
         for _ in range(self.k_epochs):
             probs = self.policy(states_t)
-            new_log_probs = torch.log(probs.gather(1, actions_t.unsqueeze(1)).squeeze(1))
+            new_log_probs = torch.log(
+                probs.gather(1, actions_t.unsqueeze(1)).squeeze(1)
+            )
             ratio = (new_log_probs - old_log_probs_t).exp()
             surr1 = ratio * adv
             surr2 = torch.clamp(ratio, 1 - self.clip_eps, 1 + self.clip_eps) * adv
@@ -159,7 +169,9 @@ class PPOAgent:
             self.opt_value.step()
 
     def save(self, path: str) -> None:
-        torch.save({"policy": self.policy.state_dict(), "value": self.value.state_dict()}, path)
+        torch.save(
+            {"policy": self.policy.state_dict(), "value": self.value.state_dict()}, path
+        )
 
     def load(self, path: str) -> None:
         checkpoint = torch.load(path)
