@@ -44,5 +44,5 @@ def test_model(model_path, num_episodes=10, render=True):
 
 if __name__ == "__main__":
     # 测试最新保存的模型
-    model_path = "actor_critic_model_700.pth"  # 根据实际保存的模型文件名修改
+    model_path = "actor_critic_model_3000.pth"  # 根据实际保存的模型文件名修改
     test_model(model_path) 
